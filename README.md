@@ -45,7 +45,7 @@ At the start of the migration, the raw database was in a state of "beautiful cha
 
 ## 🛠️ The 5 Core Modeling Rules (Our Architectural Guardrails)
 To prevent the model from sliding back into chaos, every engineering step was strictly governed by five database rules:
-1.  **Build a Star Schema:** Place central fact tables (transactional event logs) in the middle, surrounded exclusively by descriptive dimension tables [3]. **Never connect two fact tables directly**; always route filter context through shared dimensions using single-direction, one-to-many relationships.
+1.  **Build a Star Schema:** Place central fact tables (transactional event logs) in the middle, surrounded exclusively by descriptive dimension tables. **Never connect two fact tables directly**; always route filter context through shared dimensions using single-direction, one-to-many relationships.
 2.  **Understand the Grain:** Always clearly define and "say out loud" what a single row represents in a table (e.g., one company vs. one contact person) before performing any merges or transforms.
 3.  **Make Every Column Earn Its Place:** Drop columns not required for analytics (such as raw descriptions or system hash keys) to optimize file storage, speed up data refreshes, and prevent user confusion.
 4.  **Protect the Numbers:** Know the baseline totals of core transactional metrics by heart (specifically the true **Total Sales** card) and validate them after every relationship change to ensure numbers never break silently.
@@ -66,21 +66,21 @@ To prevent the model from sliding back into chaos, every engineering step was st
 
 ### 📐 Phase 2: Dimension Engineering
 To eliminate the cluttered schema, 6 disconnected customer-related tables were consolidated into a single dimension, and product directories were scrubbed:
-*   **`dim_customer`:** Merged Customer Master, Contacts, Address, City, and Region tables [24, 25, 26].
+*   **`dim_customer`:** Merged Customer Master, Contacts, Address, City, and Region tables.
     *   *Grain Alignment Solution:* The Contacts table had multiple rows per B2B customer (different employees), which caused sales figures to duplicate during merges. To align the grains to a strict **1 row = 1 customer company** relationship, the table was filtered to keep **primary contacts only**, successfully protecting the unique 60-customer baseline.
-*   **`dim_product`:** Resolved duplicates in kitchen and audio accessory records where blank, data-poor rows leaked from the source system and distorted product lookups [84, 85, 86]. Duplicate rows were filtered out, text fields were capitalized, and an indexed **surrogate key** (`product_key`) was generated to ensure stable relationships.
-*   **`dim_order_flags` (Junk Dimension):** Standardized transactional parameters (status, priority, and order channel codes) into a single, performance-optimized "junk" dimension [71, 72]. Grouped cryptic source channel codes (10, 20, 30, 40) and mapped them to user-friendly business labels ("Online Store", "Retail Partner", "Wholesale", "Field Sales").
+*   **`dim_product`:** Resolved duplicates in kitchen and audio accessory records where blank, data-poor rows leaked from the source system and distorted product lookups. Duplicate rows were filtered out, text fields were capitalized, and an indexed **surrogate key** (`product_key`) was generated to ensure stable relationships.
+*   **`dim_order_flags` (Junk Dimension):** Standardized transactional parameters (status, priority, and order channel codes) into a single, performance-optimized "junk" dimension. Grouped cryptic source channel codes (10, 20, 30, 40) and mapped them to user-friendly business labels ("Online Store", "Retail Partner", "Wholesale", "Field Sales").
 *   **`dim_geo` (Role-Playing Geography):** Extracted geography details from raw city/region logs. Connected this dimension to the fact table twice (once for `ship_to_city_key` and once for `bill_to_city_key`) utilizing active and inactive relationships to model role-playing behavior.
 
 ### 📊 Phase 3: Fact Modeling
-*   **`fact_sales` (Sales Transactions):** Appended separate transaction tables (Orders 2025 and Orders 2026) [14, 67, 68]. Under headers-and-details rules, the fact was modeled at the lowest, finest detail grain (the detailed line items) to enable accurate roll-ups [66]. All text labels were replaced with numeric surrogate keys, and pre-aggregated order totals from headers were dropped to prevent incorrect summation [93, 94, 98].
-*   **`fact_order_process` (Accumulating Snapshot):** Rushing five separate fact tables for each milestone stage (Order, Shipment, Delivery, Invoice, Payment) would duplicate revenue figures and kill dashboard performance [118, 119]. Instead, an **Accumulating Snapshot Fact Table** was engineered, placing all milestone dates side-by-side in a single row per order, allowing easy process duration tracking [121, 122, 125].
-*   **`fact_promotion_coverage` (Factless Fact):** Exploded comma-separated lists of product SKUs mapped to marketing campaigns, trimming whitespace to resolve character joins [10, 112, 113]. Since this table contains no numeric measures, it was modeled as a **Factless Fact Table** to track campaign-product coverage [114, 115].
+*   **`fact_sales` (Sales Transactions):** Appended separate transaction tables (Orders 2025 and Orders 2026). Under headers-and-details rules, the fact was modeled at the lowest, finest detail grain (the detailed line items) to enable accurate roll-ups [66]. All text labels were replaced with numeric surrogate keys, and pre-aggregated order totals from headers were dropped to prevent incorrect summation.
+*   **`fact_order_process` (Accumulating Snapshot):** Rushing five separate fact tables for each milestone stage (Order, Shipment, Delivery, Invoice, Payment) would duplicate revenue figures and kill dashboard performance. Instead, an **Accumulating Snapshot Fact Table** was engineered, placing all milestone dates side-by-side in a single row per order, allowing easy process duration tracking.
+*   **`fact_promotion_coverage` (Factless Fact):** Exploded comma-separated lists of product SKUs mapped to marketing campaigns, trimming whitespace to resolve character joins. Since this table contains no numeric measures, it was modeled as a **Factless Fact Table** to track campaign-product coverage.
 
 ### 🔒 Phase 4: Polish, Secure & Validate
-*   **Format Standardization:** Enforced a uniform, compact date format (`YYYY-MM-DD`) and turned off default summarization for non-aggregable numeric parameters [136, 137, 138].
-*   **Shared Date Calendar:** Generated a continuous date table (`dim_date`) using DAX `CALENDARAUTO()`, which dynamically scans the model for the minimum and maximum dates to enable chronological slicing across multiple facts [139, 140, 143].
-*   **Row-Level Security (RLS) Implementation:** Connected regional security mapping tables to `dim_customer` [156, 161]. Implemented a strict regional role using a dynamic DAX filter:
+*   **Format Standardization:** Enforced a uniform, compact date format (`YYYY-MM-DD`) and turned off default summarization for non-aggregable numeric parameters.
+*   **Shared Date Calendar:** Generated a continuous date table (`dim_date`) using DAX `CALENDARAUTO()`, which dynamically scans the model for the minimum and maximum dates to enable chronological slicing across multiple facts.
+*   **Row-Level Security (RLS) Implementation:** Connected regional security mapping tables to `dim_customer`. Implemented a strict regional role using a dynamic DAX filter:
     ```dax
     [region] = LOOKUPVALUE(
         security[region], 
@@ -88,12 +88,12 @@ To eliminate the cluttered schema, 6 disconnected customer-related tables were c
         USERPRINCIPLENAME()
     )
     ```
-    *Verified using "View As" to ensure regional managers (e.g., Nora for North America) are automatically restricted to their specific territorial scope [161, 163].*
+    *Verified using "View As" to ensure regional managers (e.g., Nora for North America) are automatically restricted to their specific territorial scope.*
 
 ---
 
 ## 📈 The Final Semantic Data Model (Galaxy / Star Schema)
-In our finalized architecture, all relationship filter propagation is strictly unidirectional (flowing outwards from dimensions to facts), preventing filter loops and protecting your aggregate calculations [133, 165].
+In our finalized architecture, all relationship filter propagation is strictly unidirectional (flowing outwards from dimensions to facts), preventing filter loops and protecting your aggregate calculations.
 
 ```
         +------------------+         +------------------+
@@ -154,36 +154,36 @@ The raw source data linked transactional orders to product files using text-base
 To ensure long-term stability and maintain the high performance of this semantic layer, I have established three governance guidelines for the development team:
 
 ### 1. Enforce Strict Semantic Model Ownership
-To prevent **"measure sprawl"** and calculation discrepancies, report developers must never write raw aggregation formulas (such as `SUM` or `COUNT`) directly inside front-end report files [148, 149]. All business metrics must be centrally defined as DAX measures inside the empty `_measures` table in the master dataset [149, 150]. If a new calculation is required, it must be peer-reviewed and added to the semantic layer, maintaining a single point of truth across all corporate dashboards [91, 149].
+To prevent **"measure sprawl"** and calculation discrepancies, report developers must never write raw aggregation formulas (such as `SUM` or `COUNT`) directly inside front-end report files. All business metrics must be centrally defined as DAX measures inside the empty `_measures` table in the master dataset. If a new calculation is required, it must be peer-reviewed and added to the semantic layer, maintaining a single point of truth across all corporate dashboards.
 
 ### 2. Implement Automated Data Quality Gates
-Our dimension engineering phase revealed that blank, duplicate product rows occasionally leak from the source system, which can distort our lookup joins [85, 86]. To prevent this from breaking production reports, we recommend implementing **Data Quality Gates** in the upstream data warehouse. If a source file contains duplicate business keys with null metadata fields, the pipeline should automatically quarantine those records and trigger an alert, preventing corrupted data from ever reaching the semantic layer [86].
+Our dimension engineering phase revealed that blank, duplicate product rows occasionally leak from the source system, which can distort our lookup joins. To prevent this from breaking production reports, we recommend implementing **Data Quality Gates** in the upstream data warehouse. If a source file contains duplicate business keys with null metadata fields, the pipeline should automatically quarantine those records and trigger an alert, preventing corrupted data from ever reaching the semantic layer.
 
 ### 3. Conduct Self-Service Empowerment Training
-Because the model contains inactive, role-playing relationships (such as our date dimension connecting to multiple dates in the accumulating snapshot) [100, 146], business users building self-service reports must be trained on how to activate these paths. Rather than duplicating tables, developers should be trained on utilizing DAX time-intelligence functions—like `USERELATIONSHIP`—to cleanly activate billing vs. shipping calculations dynamically inside their visuals [101, 147].
+Because the model contains inactive, role-playing relationships (such as our date dimension connecting to multiple dates in the accumulating snapshot), business users building self-service reports must be trained on how to activate these paths. Rather than duplicating tables, developers should be trained on utilizing DAX time-intelligence functions—like `USERELATIONSHIP`—to cleanly activate billing vs. shipping calculations dynamically inside their visuals.
 
 ---
 
 ## 🧮 Key DAX Calculations & Enterprise Governance
-To eliminate calculation errors, all key business metrics are bundled in a dedicated, empty folder table named `_measures` [150]:
+To eliminate calculation errors, all key business metrics are bundled in a dedicated, empty folder table named `_measures`:
 
 ### 1. Total Sales (Transactional Detail Aggregation)
 ```dax
 Total Sales = SUM(fact_sales[line_total])
 ```
-*Aggregates line-item totals. Formatted as a whole number with thousand separators [151].*
+*Aggregates line-item totals. Formatted as a whole number with thousand separators.*
 
 ### 2. Total Orders (Distinct Count over Detail Grain)
 ```dax
 Total Orders = DISTINCTCOUNT(fact_sales[order_id])
 ```
-*Ensures correct counts when evaluating transactions across the line-item detail grain, avoiding fanning-out [152].*
+*Ensures correct counts when evaluating transactions across the line-item detail grain, avoiding fanning-out.*
 
 ### 3. Active Customers (Dynamic Fact Evaluation)
 ```dax
 Total Active Customers = DISTINCTCOUNT(fact_sales[customer_id])
 ```
-*Evaluates customers with purchasing activity within the selected filter context [153].*
+*Evaluates customers with purchasing activity within the selected filter context.*
 
 ### 4. Average Fulfillment Duration (Accumulating Snapshot Average)
 ```dax
@@ -193,15 +193,15 @@ order_to_pay_days = DATEDIFF(fact_order_process[order_date], fact_order_process[
 // Dynamic Measure inside [_measures]:
 Average Order to Pay = AVERAGE(fact_order_process[order_to_pay_days])
 ```
-*Tracks the average cycle days from order placement to cash payment, responding dynamically to slicers [154, 155].*
+*Tracks the average cycle days from order placement to cash payment, responding dynamically to slicers.*
 
 ---
 
 ## 🏆 Business Outcomes & Portfolio Highlights
-*   **Zero Filter Chaos:** Eliminated sluggish, bi-directional many-to-many relationship loops, replacing them with a high-performance unidirectional Star Schema [8, 101, 133].
-*   **Reduced Model Size by ~20%:** Stripped heavy, unused string-based system hash keys, redundant columns, and duplicate staging tables, significantly accelerating query refresh times [43, 44].
-*   **100% Data Integrity:** Protected baseline metrics and verified total sales at every stage of the query transformation, restoring corporate trust in BI reporting [4, 79, 88].
-*   **Governed & Self-Service Ready:** Empowered non-technical report developers with a secure semantic layer containing centralized measures and dynamic row-level data security [150, 161, 165].
+*   **Zero Filter Chaos:** Eliminated sluggish, bi-directional many-to-many relationship loops, replacing them with a high-performance unidirectional Star Schema.
+*   **Reduced Model Size by ~20%:** Stripped heavy, unused string-based system hash keys, redundant columns, and duplicate staging tables, significantly accelerating query refresh times.
+*   **100% Data Integrity:** Protected baseline metrics and verified total sales at every stage of the query transformation, restoring corporate trust in BI reporting.
+*   **Governed & Self-Service Ready:** Empowered non-technical report developers with a secure semantic layer containing centralized measures and dynamic row-level data security.
 
 ---
 
@@ -218,4 +218,4 @@ Average Order to Pay = AVERAGE(fact_order_process[order_to_pay_days])
 ```
 
 ---
-*Project developed by **Generated by Gemini Notebook**. Feel free to connect with me on [LinkedIn](https://linkedin.com) to discuss advanced Power BI modeling, data warehousing, and semantic layer architectures!* [166]
+Feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/amadico/) to discuss advanced Power BI modeling, data warehousing, and semantic layer architectures!* [166]
