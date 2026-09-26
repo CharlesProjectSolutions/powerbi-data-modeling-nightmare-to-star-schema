@@ -10,7 +10,7 @@ The executive leadership, regional sales heads, and supply chain managers want t
 *   *How do we share reports so regional managers only see their authorized data?*
 *   *Which of our product lines are currently over-stocked in our warehouses month-over-month? etc.*
 
-Instead of having a single, unified source of truth to answer these questions, your team is handed a fragmented, chaotic staging database of 15 disconnected tables. Direct many-to-many loops and dual-filter directions make reports incredibly sluggish, and worst of all, they calculate incorrect numbers that destroy corporate trust.
+Instead of having a single, unified source of truth to answer these questions, your team is handed a fragmented, chaotic staging database of 15 disconnected tables with direct many-to-many loops and dual-filter directions making reports incredibly sluggish, and worst of all, calculate incorrect numbers that destroy corporate trust.
 
 This project documents how I stepped into this data "nightmare", drove a structured **4-Phase engineering lifecycle** governed by **5 core architectural rules**, and re-engineered the entire transactional workspace into a secure, high-performance **Galaxy and Star Schema** semantic model in Power BI.
 
