@@ -130,6 +130,8 @@ Total Active Customers = DISTINCTCOUNT(fact_sales[customer_id])
 
 ---
 
+```
+
 ## 🏆 Business Outcomes & Portfolio Highlights
 *   **Zero Filter Chaos:** Eliminated sluggish, bi-directional many-to-many relationship loops, replacing them with a high-performance unidirectional Star Schema.
 *   **Reduced Model Size by ~20%:** Stripped heavy, unused string-based system hash keys, redundant columns, and duplicate staging tables, significantly accelerating query refresh times.
