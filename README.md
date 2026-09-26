@@ -3,10 +3,11 @@
 ## Imagine you are working as a Data & Solution Analyst for a global B2B manufacturing and distribution firm. 
 
 The executive leadership, regional sales heads, and supply chain managers want to make critical, data-driven daily decisions and need to answer questions like:
+*   *Why don't revenue numbers reconcile, and why do pages take so long to load?*
 *   *Which regional accounts are reaching their credit limits, and where do we have outstanding risk?*
-*   *How many days does it actually take from the moment a B2B order is placed to when the cash is collected in our bank account?*
+*   *Are we actually hitting our monthly revenue targets, or is a granularity mismatch skewing our visuals?*
+*   *How do we share reports so regional managers only see their authorized data?*
 *   *Which of our product lines are currently over-stocked in our warehouses month-over-month?*
-*   *Which marketing campaigns are driving actual wholesale product sales, and which are simply wasting budget on empty clicks?*
 
 Instead of having a single, unified source of truth to answer these questions, your team is handed a fragmented, chaotic staging database of 15 disconnected tables. Direct many-to-many loops and dual-filter directions make reports incredibly sluggish, and worst of all, they calculate incorrect numbers that destroy corporate trust.
 
@@ -21,7 +22,7 @@ At the start of the migration, the raw database was in a state of "beautiful cha
 *   **Heavy Garbage Columns:** Tables were packed with heavy, string-based system hash keys, redundant product descriptions, and pre-aggregated totals that bloated file storage and choked refresh times.
 *   **Lack of Development Standards:** Columns featured cryptic abbreviations, inconsistent casing, and mixed business terminology (referring to "customers" in some tables and "users" in others).
 
-### 🕸️ The "Before" Relationship Workspace
+### 🕸️ The "Before" Chaotic Nightmare Data Model
 
 <img width="1916" height="1071" alt="Nightmare DataSet" src="https://github.com/user-attachments/assets/530c5510-cdba-41d4-9b83-c1974ff8bd9a" />
 
@@ -58,8 +59,6 @@ To eliminate the cluttered schema, 6 disconnected customer-related tables were c
 
 ### 📊 Phase 3: Fact Modeling
 *   **`fact_sales` (Sales Transactions):** Appended separate transaction tables (Orders 2025 and Orders 2026). Under headers-and-details rules, the fact was modeled at the lowest, finest detail grain (the detailed line items) to enable accurate roll-ups [66]. All text labels were replaced with numeric surrogate keys, and pre-aggregated order totals from headers were dropped to prevent incorrect summation.
-*   **`fact_order_process` (Accumulating Snapshot):** Rushing five separate fact tables for each milestone stage (Order, Shipment, Delivery, Invoice, Payment) would duplicate revenue figures and kill dashboard performance. Instead, an **Accumulating Snapshot Fact Table** was engineered, placing all milestone dates side-by-side in a single row per order, allowing easy process duration tracking.
-*   **`fact_promotion_coverage` (Factless Fact):** Exploded comma-separated lists of product SKUs mapped to marketing campaigns, trimming whitespace to resolve character joins. Since this table contains no numeric measures, it was modeled as a **Factless Fact Table** to track campaign-product coverage.
 
 ### 🔒 Phase 4: Polish, Secure & Validate
 *   **Format Standardization:** Enforced a uniform, compact date format (`YYYY-MM-DD`) and turned off default summarization for non-aggregable numeric parameters.
@@ -73,7 +72,7 @@ To eliminate the cluttered schema, 6 disconnected customer-related tables were c
 ---
 
 ## 📈 The Final Semantic Data Model (Galaxy / Star Schema)
-In our finalized architecture, all relationship filter propagation is strictly unidirectional (flowing outwards from dimensions to facts), preventing filter loops and protecting your aggregate calculations.
+In our finalized architecture, all relationship filter propagation is strictly unidirectional (flowing outwards from dimensions to facts), preventing filter loops and protecting our aggregated calculations.
 
 <img width="1799" height="1039" alt="Healthy Star Schema" src="https://github.com/user-attachments/assets/e427ac24-e125-4b25-843f-41d0fad70b74" />
 
@@ -119,29 +118,17 @@ To eliminate calculation errors, all key business metrics are bundled in a dedic
 ```dax
 Total Sales = SUM(fact_sales[line_total])
 ```
-*Aggregates line-item totals. Formatted as a whole number with thousand separators.*
 
 ### 2. Total Orders (Distinct Count over Detail Grain)
 ```dax
-Total Orders = DISTINCTCOUNT(fact_sales[order_id])
+Total Orders = DISTINCTCOUNT(fact_sales[order_id]) *Ensures correct counts when evaluating transactions across the line-item detail grain, avoiding fanning-out.*
 ```
-*Ensures correct counts when evaluating transactions across the line-item detail grain, avoiding fanning-out.*
 
 ### 3. Active Customers (Dynamic Fact Evaluation)
 ```dax
-Total Active Customers = DISTINCTCOUNT(fact_sales[customer_id])
+Total Active Customers = DISTINCTCOUNT(fact_sales[customer_id]) *Evaluates customers with purchasing activity within the selected filter context.*
 ```
-*Evaluates customers with purchasing activity within the selected filter context.*
 
-### 4. Average Fulfillment Duration (Accumulating Snapshot Average)
-```dax
-// Calculated Row-Level Column inside [fact_order_process]:
-order_to_pay_days = DATEDIFF(fact_order_process[order_date], fact_order_process[pay_date], DAY)
-
-// Dynamic Measure inside [_measures]:
-Average Order to Pay = AVERAGE(fact_order_process[order_to_pay_days])
-```
-*Tracks the average cycle days from order placement to cash payment, responding dynamically to slicers.*
 
 ---
 
@@ -166,4 +153,4 @@ Average Order to Pay = AVERAGE(fact_order_process[order_to_pay_days])
 ```
 
 ---
-Feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/amadico/) to discuss advanced Power BI modeling, data warehousing, and semantic layer architectures!* [166]
+Feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/amadico/) to discuss advanced Power BI modeling, data warehousing, and semantic layer architectures!*
