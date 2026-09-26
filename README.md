@@ -23,22 +23,7 @@ At the start of the migration, the raw database was in a state of "beautiful cha
 
 ### 🕸️ The "Before" Relationship Workspace
 ```
-       +------------------+                   +------------------+
-       |   orders_2025    |<-(Many-to-Many)-->|   orders_2026    |
-       +--------+---------+                   +--------+---------+
-                |                                      |
-         (Dual-Filter)                           (Dual-Filter)
-                |                                      |
-       +--------v---------+                   +--------v---------+
-       |   product_master |<-(Many-to-Many)-->|     shipments    |
-       +------------------+                   +--------+---------+
-                                                       |
-                                                 (Dual-Filter)
-                                                       |
-                                              +--------v---------+
-                                              |     sheet_1      |
-                                              |   (Duplicate!)   |
-                                              +------------------+
+ ![Before Rebuilding Nightmare Data Model]("C:\Users\Charles\Downloads\Healthy Star Schema.png")
 ```
 
 ---
