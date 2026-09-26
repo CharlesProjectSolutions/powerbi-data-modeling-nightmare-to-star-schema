@@ -22,11 +22,8 @@ At the start of the migration, the raw database was in a state of "beautiful cha
 *   **Lack of Development Standards:** Columns featured cryptic abbreviations, inconsistent casing, and mixed business terminology (referring to "customers" in some tables and "users" in others).
 
 ### 🕸️ The "Before" Relationship Workspace
-```
- ![Before Rebuilding Nightmare Data Model](<img width="1799" height="1039" alt="Healthy Star Schema" src="https://github.com/user-attachments/assets/b0784d47-c3f3-4f82-8133-ffce225f2ebd" />
-)
 
-```
+<img width="1916" height="1071" alt="Nightmare DataSet" src="https://github.com/user-attachments/assets/530c5510-cdba-41d4-9b83-c1974ff8bd9a" />
 
 ---
 
@@ -79,12 +76,6 @@ To eliminate the cluttered schema, 6 disconnected customer-related tables were c
 In our finalized architecture, all relationship filter propagation is strictly unidirectional (flowing outwards from dimensions to facts), preventing filter loops and protecting your aggregate calculations.
 
 <img width="1799" height="1039" alt="Healthy Star Schema" src="https://github.com/user-attachments/assets/e427ac24-e125-4b25-843f-41d0fad70b74" />
-
-
-```
-<img width="1799" height="1039" alt="Healthy Star Schema" src="https://github.com/user-attachments/assets/db18b947-64e0-42d2-8907-f0019ffe58a1" />
-
-```
 
 ---
 
