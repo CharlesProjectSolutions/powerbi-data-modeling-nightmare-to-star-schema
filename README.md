@@ -1,6 +1,6 @@
 # Enterprise B2B Sales & Supply Chain Semantic Model: Re-Architecting bad models into a Star Schema
 
-## Imagine you are working as a Data & Solution Analyst for a global B2B manufacturing and distribution firm. 
+Imagine you are working as a Data & Solution Analyst for a global B2B manufacturing and distribution firm. 
 
 The executive leadership, regional sales heads, and supply chain managers want to make critical, data-driven daily decisions and need to answer questions like:
 *   *Why don't revenue numbers reconcile, and why do pages take so long to load?*
