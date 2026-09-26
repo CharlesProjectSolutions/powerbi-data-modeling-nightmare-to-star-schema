@@ -82,11 +82,7 @@ To eliminate the cluttered schema, 6 disconnected customer-related tables were c
 *   **Shared Date Calendar:** Generated a continuous date table (`dim_date`) using DAX `CALENDARAUTO()`, which dynamically scans the model for the minimum and maximum dates to enable chronological slicing across multiple facts.
 *   **Row-Level Security (RLS) Implementation:** Connected regional security mapping tables to `dim_customer`. Implemented a strict regional role using a dynamic DAX filter:
     ```dax
-    [region] = LOOKUPVALUE(
-        security[region], 
-        security[user_email], 
-        USERPRINCIPLENAME()
-    )
+    [region] = LOOKUPVALUE(security[region], security[user_email], USERPRINCIPLENAME())
     ```
     *Verified using "View As" to ensure regional managers (e.g., Nora for North America) are automatically restricted to their specific territorial scope.*
 
@@ -124,28 +120,19 @@ In our finalized architecture, all relationship filter propagation is strictly u
 
 ## 🧠 Architectural Deep Dives: Engineering Deciphered
 
-### 🔍 Deep Dive 1: The Accumulating Snapshot vs. Slow Fact Joins
-In legacy architectures, developers often create five separate fact tables to track different operational milestones: `fact_orders`, `fact_shipments`, `fact_deliveries`, `fact_invoices`, and `fact_payments` [118, 119]. 
+### 🔍 Deep Dive 1: Solving B2B Contact Grain Alignment & Fanning
+When merging B2B customer master directories with their corresponding contacts, a critical grain mismatch arises. The customer table grain is **1 row = 1 customer company**, whereas the contacts table grain is **1 row = 1 contact person** (with multiple contact people representing a single company).
 
-To calculate operational cycle times (such as "Order to Payment" duration), they are forced to run massive many-to-many joins across these five heavy fact tables in Power BI [65, 121]. This results in two catastrophic issues:
-1.  **Metric Fan-Out:** Joining multiple transactional facts together at different grains duplicates values, fanning out your core revenue metrics [65, 120].
-2.  **Resource Exhaustion:** Processing multiple fact-to-fact joins forces the Power BI engine to hold millions of nested relations in active memory, causing query time-outs and dashboard lag [65].
+If you merge these tables directly without correcting the grain, the customer company rows duplicate to accommodate every contact person. When this merged dimension is joined to your sales facts, it duplicates your transactional lines—causing your baseline total sales to skyrocket and report incorrect numbers.
 
-**The Solution:** I engineered an **Accumulating Snapshot Fact Table** (`fact_order_process`) [122]. By using the unique `order_id` as a single master spine, I merged these milestones side-by-side during the ETL phase [122, 124, 125]. This allows us to store the entire order lifecycle in a single row containing five native date fields [125]. Now, calculating cycle durations is a simple, high-performance row-level DAX subtraction (`DATEDIFF`) that requires zero database joins at runtime [154].
+**The Solution:** In Power Query, I analyzed the contact records and identified a Boolean flag column: `is_primary`. By filtering the staging query to keep **only rows where `is_primary = TRUE`**, I forced a strict **1-to-1 grain alignment**. This preserved the exact 60 unique customer accounts baseline, ensuring that subsequent merges kept our transaction metrics 100% accurate and protected.
 
-### 🔍 Deep Dive 2: Solving B2B Contact Grain Alignment & Fanning
-When merging B2B customer master directories with their corresponding contacts, a critical grain mismatch arises [30]. The customer table grain is **1 row = 1 customer company**, whereas the contacts table grain is **1 row = 1 contact person** (with multiple contact people representing a single company) [11, 30].
-
-If you merge these tables directly without correcting the grain, the customer company rows duplicate to accommodate every contact person [29, 30]. When this merged dimension is joined to your sales facts, it duplicates your transactional lines—causing your baseline total sales to skyrocket and report incorrect numbers [29, 30, 84].
-
-**The Solution:** In Power Query, I analyzed the contact records and identified a Boolean flag column: `is_primary` [11, 31]. By filtering the staging query to keep **only rows where `is_primary = TRUE`**, I forced a strict **1-to-1 grain alignment** [31, 32]. This preserved the exact 60 unique customer accounts baseline, ensuring that subsequent merges kept our transaction metrics 100% accurate and protected [28, 32, 79].
-
-### 🔍 Deep Dive 3: Creating Surrogate Keys over Volatile Business Keys
-The raw source data linked transactional orders to product files using text-based product names or volatile, alphanumeric business codes [49, 81, 83]. In database design, relying on business keys or text names for relationships is highly risky:
-*   Text comparisons are highly sensitive to white-spaces, casing, and trailing characters, leading to broken lookup joins and null values [51, 84, 112].
+### 🔍 Deep Dive 2: Creating Surrogate Keys over Volatile Business Keys
+The raw source data linked transactional orders to product files using text-based product names or volatile, alphanumeric business codes. In database design, relying on business keys or text names for relationships is highly risky:
+*   Text comparisons are highly sensitive to white-spaces, casing, and trailing characters, leading to broken lookup joins and null values.
 *   Business keys are prone to change in source systems (e.g., during product re-brandings or database migrations), which breaks historical data connections.
 
-**The Solution:** During Phase 2, I generated an independent, sequential integer **surrogate key** (`product_key`) inside our `dim_product` query using an index column starting at 1 [53]. I then mapped this numeric key into our sales facts during ETL, removing all volatile text names and source keys from the fact table [53, 98]. Because integers require significantly less RAM to store than long text strings, this surrogate key pattern dramatically compressed the final model size and accelerated query performance.
+**The Solution:** During Phase 2, I generated an independent, sequential integer **surrogate key** (`product_key`) inside our `dim_product` query using an index column starting at 1. I then mapped this numeric key into our sales facts during ETL, removing all volatile text names and source keys from the fact table. Because integers require significantly less RAM to store than long text strings, this surrogate key pattern dramatically compressed the final model size and accelerated query performance.
 
 ---
 
