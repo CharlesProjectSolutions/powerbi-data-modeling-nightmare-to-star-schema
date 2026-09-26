@@ -78,6 +78,9 @@ To eliminate the cluttered schema, 6 disconnected customer-related tables were c
 ## 📈 The Final Semantic Data Model (Galaxy / Star Schema)
 In our finalized architecture, all relationship filter propagation is strictly unidirectional (flowing outwards from dimensions to facts), preventing filter loops and protecting your aggregate calculations.
 
+<img width="1799" height="1039" alt="Healthy Star Schema" src="https://github.com/user-attachments/assets/e427ac24-e125-4b25-843f-41d0fad70b74" />
+
+
 ```
 <img width="1799" height="1039" alt="Healthy Star Schema" src="https://github.com/user-attachments/assets/db18b947-64e0-42d2-8907-f0019ffe58a1" />
 
