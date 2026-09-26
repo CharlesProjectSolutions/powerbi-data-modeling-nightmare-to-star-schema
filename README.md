@@ -23,7 +23,9 @@ At the start of the migration, the raw database was in a state of "beautiful cha
 
 ### 🕸️ The "Before" Relationship Workspace
 ```
- ![Before Rebuilding Nightmare Data Model]("C:\Users\Charles\Downloads\Healthy Star Schema.png")
+ ![Before Rebuilding Nightmare Data Model](<img width="1799" height="1039" alt="Healthy Star Schema" src="https://github.com/user-attachments/assets/b0784d47-c3f3-4f82-8133-ffce225f2ebd" />
+)
+
 ```
 
 ---
@@ -77,28 +79,8 @@ To eliminate the cluttered schema, 6 disconnected customer-related tables were c
 In our finalized architecture, all relationship filter propagation is strictly unidirectional (flowing outwards from dimensions to facts), preventing filter loops and protecting your aggregate calculations.
 
 ```
-        +------------------+         +------------------+
-        |     dim_date     |         |   dim_product    |
-        +--------+---------+         +--------+---------+
-                 |                            |
-      1:N (Order/Ship/Pay Dates)             1:N (Product Key)
-                 |                            |
-       +---------v---------+        +---------v---------+
-       |fact_order_process |        |    fact_sales     |
-       +---------^---------+        +---------^---------+
-                 |                            |
-           1:N (Customer ID)            1:N (Customer ID)
-                 |                            |
-        +--------+---------+                  |
-        |   dim_customer   <------------------+
-        +--------^---------+
-                 |
-         1:1 (Region Filter)
-                 |
-        +--------+---------+
-        |     security     |
-        |  (Row-Level Sec) |
-        +------------------+
+<img width="1799" height="1039" alt="Healthy Star Schema" src="https://github.com/user-attachments/assets/db18b947-64e0-42d2-8907-f0019ffe58a1" />
+
 ```
 
 ---
