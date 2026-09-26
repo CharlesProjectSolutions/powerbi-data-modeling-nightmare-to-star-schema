@@ -121,14 +121,12 @@ Total Sales = SUM(fact_sales[line_total])
 
 ### 2. Total Orders (Distinct Count over Detail Grain)
 ```dax
-Total Orders = DISTINCTCOUNT(fact_sales[order_id]) *Ensures correct counts when evaluating transactions across the line-item detail grain, avoiding fanning-out.*
+Total Orders = DISTINCTCOUNT(fact_sales[order_id]) 
 ```
 
 ### 3. Active Customers (Dynamic Fact Evaluation)
 ```dax
-Total Active Customers = DISTINCTCOUNT(fact_sales[customer_id]) *Evaluates customers with purchasing activity within the selected filter context.*
-```
-
+Total Active Customers = DISTINCTCOUNT(fact_sales[customer_id]) 
 
 ---
 
